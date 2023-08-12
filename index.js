@@ -1,17 +1,18 @@
 import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
-import * as dotenv from 'dotenv'
 import { getIntrospectionQuery, buildClientSchema, printSchema } from 'graphql';
-import { Configuration, OpenAIApi } from 'openai';
+import { OpenAIClient, AzureKeyCredential } from "@azure/openai";
 import { encode } from 'gpt-3-encoder';
 import chalk from 'chalk';
 
-dotenv.config()
+const azureEndpoint = process.env["AZURE_OPENAI_ENDPOINT"] ;
+const azureApiKey = process.env["AZURE_OPENAI_KEY"] ;
+const client = new OpenAIClient(azureEndpoint, new AzureKeyCredential(azureApiKey));
+const deploymentId = "gpt35";
 
 const MAX_SCHEMA_CHARS = 100000;
 const MAX_SCHEMA_TOKENS = 3000;
 const COST_PER_TOKEN = 0.2 / 1000; // $0.002 (0.2c) per 1k tokens
-const CHATGPT_TIMEOUT = 60 * 1000; // 1 minute
 
 const log = {
   error: (str) => console.error(chalk.red(str)),
@@ -50,14 +51,12 @@ if (tokens.length > MAX_SCHEMA_TOKENS) {
   log.error(`Too many tokens in schema (${tokens.length})`);
   process.exit(1);
 } else {
-  
-  const cents = COST_PER_TOKEN * tokens.length * 2; // 2 chat requests per question
+  // 2 chat requests per question
+  const cents = COST_PER_TOKEN * tokens.length * 2; 
   log.info(`${tokens.length} tokens in schema, each question will cost about ${cents.toFixed(2)} cents`);
 }
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
+
+
 const querySystemPrompt = "I am going to give you a GraphQL SDL schema document and ask you to generate GraphQL queries for me, " +
 "then I'll send you the JSON response I recieved from the API for that query and ask you to explain the results in English. " + 
 "When asked for a GraphQL query, you should only respond with the full query text I should use, and when asked to explain the " +
@@ -132,8 +131,9 @@ async function parseAndPostQuery(messageContent, shouldRetry) {
   chatMessages.push({ role: 'user', content: `That query doesn't work on the schema I provided, can you try again? I got this error response when I sent the query to the API: \`${queryResultString}\`` });
   let correctionChatMessage;
   try {
-    const chatResponse = await openai.createChatCompletion({ model: 'gpt-3.5-turbo', messages: chatMessages }, { timeout: CHATGPT_TIMEOUT });
-    correctionChatMessage = chatResponse.data.choices[0].message;
+    // const chatResponse = await openai.createChatCompletion({ model: 'gpt-3.5-turbo', messages: chatMessages }, { timeout: CHATGPT_TIMEOUT });
+    const chatResponse = await client.getChatCompletions(deploymentId, chatMessages);
+    correctionChatMessage = chatResponse.choices[0].message;
     chatMessages.push(correctionChatMessage);
   } catch (e) {
     log.error(`Error asking ChatGPT for query correction: ${e.message}`);
@@ -168,8 +168,9 @@ while (true) {
   log.debug(`Sending question to ChatGPT: ${queryQuestionMessage}`);
   let queryChatMessage;
   try {
-    const chatResponse = await openai.createChatCompletion({ model: 'gpt-3.5-turbo', messages: chatMessages }, { timeout: CHATGPT_TIMEOUT });
-    queryChatMessage = chatResponse.data.choices[0].message;
+    // const chatResponse = await openai.createChatCompletion({ model: 'gpt-3.5-turbo', messages: chatMessages }, { timeout: CHATGPT_TIMEOUT });
+    const chatResponse = await client.getChatCompletions(deploymentId, chatMessages);
+    queryChatMessage = chatResponse.choices[0].message;
     chatMessages.push(queryChatMessage);
   } catch (e) {
     log.error(`Error sending question to ChatGPT: ${e.message}`);
@@ -190,8 +191,9 @@ while (true) {
   log.debug(`Asking ChatGPT to interpret the results: ${explainQuestionMessage}`);
   let intepretChatMessage;
   try {
-    const chatResponse = await openai.createChatCompletion({ model: 'gpt-3.5-turbo', messages: chatMessages }, { timeout: CHATGPT_TIMEOUT });
-    intepretChatMessage = chatResponse.data.choices[0].message;
+    // const chatResponse = await openai.createChatCompletion({ model: 'gpt-3.5-turbo', messages: chatMessages }, { timeout: CHATGPT_TIMEOUT });
+    const chatResponse = await client.getChatCompletions(deploymentId, chatMessages);
+    intepretChatMessage = chatResponse.choices[0].message;
     chatMessages.push(intepretChatMessage);
   } catch (e) {
     log.error(`Error asking ChatGPT to interpret the results: ${e.message}`);
