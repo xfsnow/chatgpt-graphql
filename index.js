@@ -5,10 +5,11 @@ import { OpenAIClient, AzureKeyCredential } from "@azure/openai";
 import { encode } from 'gpt-3-encoder';
 import chalk from 'chalk';
 
-const azureEndpoint = process.env["AZURE_OPENAI_ENDPOINT"] ;
-const azureApiKey = process.env["AZURE_OPENAI_KEY"] ;
+const azureEndpoint = process.env["AZURE_OPENAI_ENDPOINT"];
+const azureApiKey = process.env["AZURE_OPENAI_KEY"];
 const client = new OpenAIClient(azureEndpoint, new AzureKeyCredential(azureApiKey));
-const deploymentId = "gpt35";
+// Change your deployment ID here
+const deploymentId = 'gpt35';
 
 const MAX_SCHEMA_CHARS = 100000;
 const MAX_SCHEMA_TOKENS = 3000;

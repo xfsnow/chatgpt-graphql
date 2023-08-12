@@ -5,7 +5,8 @@ import { OpenAIClient, AzureKeyCredential } from "@azure/openai";
 // setx AZURE_OPENAI_ENDPOINT "REPLACE_WITH_YOUR_ENDPOINT_HERE" 设置环境变量
 const endpoint = process.env["AZURE_OPENAI_ENDPOINT"] ;
 const azureApiKey = process.env["AZURE_OPENAI_KEY"] ;
-
+// Change your deployment ID here
+const deploymentId = 'gpt35';
 const messages = [
   { role: "system", content: "You are a helpful assistant." },
   { role: "user", content: "Does Azure OpenAI support customer managed keys?" },
@@ -15,9 +16,7 @@ const messages = [
 
 async function main() {
   console.log("== Chat Completions Sample ==");
-  console.log("endpoint:", endpoint, "azureApiKey:", azureApiKey);
   const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
-  const deploymentId = "gpt35";
   const result = await client.getChatCompletions(deploymentId, messages);
 
   for (const choice of result.choices) {
