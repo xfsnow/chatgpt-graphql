@@ -1,40 +1,32 @@
-# ChatGPT GraphQL Schema
+# 使用 Azure OpenAI 实现 GraphQL Schema 的自动问答
 
-A fairly hacky experiment that allows plain English interaction with public GraphQL endpoints using ChatGPT.
+用于演示通过Azure OpenAI使用自然语言转化成 GraphQL 再调用公共的接口。为演示方便，当前仅支持无验证的公开接口。运行此程序，需要先设置2个环境变量：
 
-To run: `npm start -- https://countries.trevorblades.com/`, but it must be an unauthenticated and relatively small public API.
-
-An OpenAI API key must be passed in using an env variable which can be done by making a `.env` file with this structure:
-
+```bash
+setx AZURE_OPENAI_KEY "REPLACE_WITH_YOUR_KEY_VALUE_HERE"
+setx AZURE_OPENAI_ENDPOINT "REPLACE_WITH_YOUR_ENDPOINT_HERE"
 ```
-OPENAI_API_KEY="key-here"
+再到 index.js 中修改 deploymentId 的值
+
+```bash
+// Change your deployment ID here
+const deploymentId = 'gpt35';
 ```
 
-## Working endpoints
-* `https://countries.trevorblades.com/` - basic country data
-* `https://space-courses-api.herokuapp.com/` - fake Odyssey courses
-* `https://rickandmortyapi.com/graphql` - rick and morty
-* `https://comet-cruises-api.herokuapp.com/` - tiny example locations service
-* `https://comet-cruises-activities.herokuapp.com/` - tiny example activities service
-* `https://api.react-finland.fi/graphql` - data about react conferences in finland
-* `https://barcelona-urban-mobility-graphql-api.netlify.app/graphql` - data about bike/metro/bus stations in barcelona
-* `https://fruits-api.netlify.app/graphql` - fruit info
+然后运行 `npm start -- https://countries.trevorblades.com/` 即可。
 
-## Non-working endpoints
-* `https://graphql.anilist.co/` - too many tokens (43562)
-* `https://api.github.com/graphql` - needs authentication and almost definitely too big
-* `https://beta.pokeapi.co/graphql/v1beta` - too many characters (5640630)
-* `https://api.apollographql.com/graphql` - no introspection?
-* `http://api.catalysis-hub.org/graphql` - too many tokens (78686)
-* `https://api.digitransit.fi/routing/v1/routers/finland/index/graphql` - Too many characters in schema (150607)
-* `https://api.ean-search.org/graphql` - needs auth
-* `https://api.stratz.com/graphql` - needs auth?
-* `https://tmdb.apps.quintero.io/` - Too many characters in schema (155243) (5874 tokens)
-* `https://linkedsdg.officialstatistics.org/graphql` - Too many characters in schema (194040)
+## 目前可用的一些公开接口
+* `https://countries.trevorblades.com/` - 基本的国家数据
+* `https://space-courses-api.herokuapp.com/` - 虚构的太空课程
+* `https://rickandmortyapi.com/graphql` - 瑞克和莫蒂
+* `https://comet-cruises-api.herokuapp.com/` - 微型示例位置服务
+* `https://comet-cruises-activities.herokuapp.com/` - 微型示例活动服务
+* `https://api.react-finland.fi/graphql/` - 关于芬兰 React 大会的数据
+* `https://barcelona-urban-mobility-graphql-api.netlify.app/graphql/` - 关于巴塞罗那自行车/地铁/公交车站的数据
 
-## Example output
+## 演示示例
 
-### Using https://countries.trevorblades.com/ to chat about Oceanic countries.
+### 使用 https://countries.trevorblades.com/ 进行地理问答。
 
 ````
 npm start -- https://countries.trevorblades.com/
