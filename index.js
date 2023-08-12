@@ -8,8 +8,11 @@ import chalk from 'chalk';
 const azureEndpoint = process.env["AZURE_OPENAI_ENDPOINT"];
 const azureApiKey = process.env["AZURE_OPENAI_KEY"];
 const client = new OpenAIClient(azureEndpoint, new AzureKeyCredential(azureApiKey));
-// Change your deployment ID here
+// Change your deployment ID here:
 const deploymentId = 'gpt35';
+// Change your language here:
+const userLanguage = 'Chinese';
+// const userLanguage = 'English';
 
 const MAX_SCHEMA_CHARS = 100000;
 const MAX_SCHEMA_TOKENS = 3000;
@@ -19,7 +22,7 @@ const log = {
   error: (str) => console.error(chalk.red(str)),
   info: (str) => console.info(chalk.white(str)),
   debug: (str) => { if (process.env.HIDE_DEBUG !== "true") console.info(chalk.dim(str)) },
-  response: (str) => console.info(chalk.bold(str)),
+  response: (str) => console.info(chalk.green(str)),
 }
 
 if (process.argv.length !== 3) {
@@ -57,11 +60,10 @@ if (tokens.length > MAX_SCHEMA_TOKENS) {
   log.info(`${tokens.length} tokens in schema, each question will cost about ${cents.toFixed(2)} cents`);
 }
 
-
 const querySystemPrompt = "I am going to give you a GraphQL SDL schema document and ask you to generate GraphQL queries for me, " +
-"then I'll send you the JSON response I recieved from the API for that query and ask you to explain the results in English. " + 
+"then I'll send you the JSON response I recieved from the API for that query and ask you to explain the results in " + userLanguage + ". " +
 "When asked for a GraphQL query, you should only respond with the full query text I should use, and when asked to explain the " +
-"results, you should respond with a plain English description of the contents of the response.";
+"results, you should respond with a plain description of the contents of the response using "+ userLanguage + ". " ;
 const sampleSchema = `Here is the schema:
 \`\`\`
 type Query {
@@ -85,7 +87,7 @@ const sampleQueryResponse = `\`\`\`
     name
   }
 }\`\`\``;
-const explainQuestion = (response) => `I sent that query and got this response: \`${response}\`. Translate that response to English.`;
+const explainQuestion = (response) => `I sent that query and got this response: \`${response}\`. Translate that response to \`${userLanguage}\`.`;
 const sampleExplainResponse = 'The name of the user with ID 2 is "Nick Marsh".';
 const schemaBlock = 'Here is another schema, from now on only use this schema when creating queries and explaining results:\n```\n' + sdlString + '\n```';
 let chatMessages = [
@@ -169,7 +171,6 @@ while (true) {
   log.debug(`Sending question to ChatGPT: ${queryQuestionMessage}`);
   let queryChatMessage;
   try {
-    // const chatResponse = await openai.createChatCompletion({ model: 'gpt-3.5-turbo', messages: chatMessages }, { timeout: CHATGPT_TIMEOUT });
     const chatResponse = await client.getChatCompletions(deploymentId, chatMessages);
     queryChatMessage = chatResponse.choices[0].message;
     chatMessages.push(queryChatMessage);
@@ -192,7 +193,6 @@ while (true) {
   log.debug(`Asking ChatGPT to interpret the results: ${explainQuestionMessage}`);
   let intepretChatMessage;
   try {
-    // const chatResponse = await openai.createChatCompletion({ model: 'gpt-3.5-turbo', messages: chatMessages }, { timeout: CHATGPT_TIMEOUT });
     const chatResponse = await client.getChatCompletions(deploymentId, chatMessages);
     intepretChatMessage = chatResponse.choices[0].message;
     chatMessages.push(intepretChatMessage);
